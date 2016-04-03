@@ -29,8 +29,8 @@ class GP_Import_From_WP_Org {
 	
 	public function gp_translations_footer_links( $footer_links, $project, $locale, $translation_set ) {
 		if ( GP::$permission->current_user_can( 'approve', 'translation-set', $translation_set->id ) ) {
-			$stable_link = gp_link_get( gp_url( '/gp-wp-import/stable' . $translation_set->id ), __( '[Stable]', 'glotpress' ) );
-			$dev_link = gp_link_get( gp_url( '/gp-wp-import/dev' . $translation_set->id ), __( '[Development]', 'glotpress' ) );
+			$stable_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable' ), __( '[Stable]', 'glotpress' ) );
+			$dev_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/dev'), __( '[Development]', 'glotpress' ) );
 			$footer_links[] = sprintf( __( 'Import from wordpress.org: %s %s', 'glotpress' ), $stable_link, $dev_link );
 		}
 		
