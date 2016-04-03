@@ -14,18 +14,24 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 class GP_Import_From_WP_Org {
 	public $id = 'gp-import-from-wp-org';
 
+	private	$source_types = array( 'stable', 'dev' );
+
 	public function __construct() {
 		add_filter( 'gp_translations_footer_links', array( $this, 'gp_translations_footer_links' ), 10, 4 );
 
 		// We can't use the filter in the defaults route code because plugins don't load until after
 		// it has already run, so instead add the routes directly to the global GP_Router object.
+		GP::$router->add( "/gp-wp-import/(.+?)/(.+?)", array( $this, 'gp_wp_import' ), 'get' );
+		GP::$router->add( "/gp-wp-import/(.+?)/(.+?)", array( $this, 'gp_wp_import' ), 'post' );
 		GP::$router->add( "/gp-wp-import/(.+?)", array( $this, 'gp_wp_import' ), 'get' );
 		GP::$router->add( "/gp-wp-import/(.+?)", array( $this, 'gp_wp_import' ), 'post' );
 	}
 	
 	public function gp_translations_footer_links( $footer_links, $project, $locale, $translation_set ) {
 		if ( GP::$permission->current_user_can( 'approve', 'translation-set', $translation_set->id ) ) {
-			$footer_links[] = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id ), __( 'Import from wordpress.org', 'glotpress' ) );
+			$stable_link = gp_link_get( gp_url( '/gp-wp-import/stable' . $translation_set->id ), __( '[Stable]', 'glotpress' ) );
+			$dev_link = gp_link_get( gp_url( '/gp-wp-import/dev' . $translation_set->id ), __( '[Development]', 'glotpress' ) );
+			$footer_links[] = sprintf( __( 'Import from wordpress.org: %s %s', 'glotpress' ), $stable_link, $dev_link );
 		}
 		
 		return $footer_links;
@@ -34,17 +40,18 @@ class GP_Import_From_WP_Org {
 	public function before_request() {
 	}
 
-	public function gp_wp_import( $translation_set_id ) {
-		//wp_redirect( $url );
-		//$this->tmpl( 'redirect', compact( 'url' ) );
-
+	public function gp_wp_import( $translation_set_id, $source_type = 'stable' ) {
 		// Get a route object to use for redirection.
 		$route = new GP_Route;
+
+		if ( ! in_array( $source_type, $this->source_types ) ) {
+			$route->redirect_with_error( __( 'Unknown WordPress source type!', 'glotpress' ) );
+		}
 
 		$translation_set = GP::$translation_set->find_one( array( 'id' => $translation_set_id ) );
 		$project = GP::$project->find_one( array( 'id' => $translation_set->project_id ) );
 
-		$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-plugins/%s/stable/%s/default/export-translations', $project->slug, $translation_set->locale );
+		$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-plugins/%s/%s/%s/default/export-translations', $project->slug, $source_type, $translation_set->locale );
 
 		$data = file_get_contents( $wp_url );
 		
