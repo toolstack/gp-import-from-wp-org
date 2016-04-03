@@ -6,7 +6,7 @@ Description: Automatically extract source strings from a remote repo.
 Version: 0.5
 Author: Greg Ross
 Author URI: http://toolstack.com
-Tags: glotpress, glotpress plugin, translate 
+Tags: glotpress, glotpress plugin, translate
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
@@ -23,17 +23,15 @@ class GP_Import_From_WP_Org {
 		// it has already run, so instead add the routes directly to the global GP_Router object.
 		GP::$router->add( "/gp-wp-import/(.+?)/(.+?)", array( $this, 'gp_wp_import' ), 'get' );
 		GP::$router->add( "/gp-wp-import/(.+?)/(.+?)", array( $this, 'gp_wp_import' ), 'post' );
-		GP::$router->add( "/gp-wp-import/(.+?)", array( $this, 'gp_wp_import' ), 'get' );
-		GP::$router->add( "/gp-wp-import/(.+?)", array( $this, 'gp_wp_import' ), 'post' );
 	}
-	
+
 	public function gp_translations_footer_links( $footer_links, $project, $locale, $translation_set ) {
 		if ( GP::$permission->current_user_can( 'approve', 'translation-set', $translation_set->id ) ) {
 			$stable_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable' ), __( '[Stable]', 'glotpress' ) );
 			$dev_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/dev'), __( '[Development]', 'glotpress' ) );
 			$footer_links[] = sprintf( __( 'Import from wordpress.org: %s %s', 'glotpress' ), $stable_link, $dev_link );
 		}
-		
+
 		return $footer_links;
 	}
 
@@ -54,15 +52,15 @@ class GP_Import_From_WP_Org {
 		$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-plugins/%s/%s/%s/default/export-translations', $project->slug, $source_type, $translation_set->locale );
 
 		$data = file_get_contents( $wp_url );
-		
+
 		if ( false !== $data ) {
 			$temp_file = tempnam( sys_get_temp_dir(), 'GPI' );
-			
+
 			if ( false !== file_put_contents( $temp_file, $data ) ) {
 				echo $temp_file . "<br>";
 
 				$format = gp_get_import_file_format( 'po', '' );
-				
+
 				$translations = $format->read_translations_from_file( $temp_file, $project );
 
 				if ( !$translations ) {
@@ -72,11 +70,11 @@ class GP_Import_From_WP_Org {
 
 				$translations_added = $translation_set->import( $translations );
 				gp_notice_set( sprintf( __( '%s translations were added', 'glotpress' ), $translations_added ) );
-				
+
 				unlink( $temp_file );
 			}
 		}
-		
+
 		// redirect back to the translation set page.
 		$route->redirect( gp_url_project( $project, gp_url_join( $translation_set->locale, $translation_set->slug ) ) );
 	}
@@ -91,6 +89,6 @@ add_action( 'gp_init', 'gp_import_from_wp_org_init' );
 // This function creates the plugin.
 function gp_import_from_wp_org_init() {
 	GLOBAL $gp_import_from_wp_org;
-	
+
 	$gp_import_from_wp_org = new GP_Import_From_WP_Org;
 }
