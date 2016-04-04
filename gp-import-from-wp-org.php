@@ -27,9 +27,9 @@ class GP_Import_From_WP_Org {
 
 	public function gp_translations_footer_links( $footer_links, $project, $locale, $translation_set ) {
 		if ( GP::$permission->current_user_can( 'approve', 'translation-set', $translation_set->id ) ) {
-			$stable_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable' ), __( '[Stable]', 'glotpress' ) );
-			$dev_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/dev'), __( '[Development]', 'glotpress' ) );
-			$footer_links[] = sprintf( __( 'Import from wordpress.org: %s %s', 'glotpress' ), $stable_link, $dev_link );
+			$stable_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable' ), __( '[Stable]' ) );
+			$dev_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/dev'), __( '[Development]' ) );
+			$footer_links[] = sprintf( __( 'Import from wordpress.org: %s %s' ), $stable_link, $dev_link );
 		}
 
 		return $footer_links;
@@ -43,7 +43,7 @@ class GP_Import_From_WP_Org {
 		$route = new GP_Route;
 
 		if ( ! in_array( $source_type, $this->source_types ) ) {
-			$route->redirect_with_error( __( 'Unknown WordPress source type!', 'glotpress' ) );
+			$route->redirect_with_error( __( 'Unknown WordPress source type!' ) );
 		}
 
 		$translation_set = GP::$translation_set->find_one( array( 'id' => $translation_set_id ) );
@@ -64,15 +64,22 @@ class GP_Import_From_WP_Org {
 				$translations = $format->read_translations_from_file( $temp_file, $project );
 
 				if ( !$translations ) {
-					$route->redirect_with_error( __( 'Couldn&#8217;t load translations from file!', 'glotpress' ) );
+					unlink( $temp_file );
+					
+					$route->redirect_with_error( __( 'Couldn&#8217;t load translations from file!' ) );
+					
 					return;
 				}
 
 				$translations_added = $translation_set->import( $translations );
-				gp_notice_set( sprintf( __( '%s translations were added', 'glotpress' ), $translations_added ) );
+				gp_notice_set( sprintf( __( '%s translations were added' ), $translations_added ) );
 
 				unlink( $temp_file );
 			}
+		} else {
+			$route->redirect_with_error( sprintf( __( 'Couldn&#8217;t download the translations from %s!' ), $wp_url ) );
+			
+			return;
 		}
 
 		// redirect back to the translation set page.
