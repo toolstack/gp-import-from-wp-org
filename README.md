@@ -1,6 +1,6 @@
 ## GP Import Translations from wordress.org
 
-A plugin for [GlotPress as a WordPress plugin](https://github.com/GlotPress/GlotPress-WP) that imports a lanaguage from wordpress.org's translation site.
+A plugin for [GlotPress as a WordPress plugin](https://github.com/GlotPress/GlotPress-WP) that imports a language from wordpress.org's translation site.
 
 With a single click you can now import translations that reside on translate.wordpress.org in to your local GlotPress installation!
 
