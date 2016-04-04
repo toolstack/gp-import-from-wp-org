@@ -1,3 +1,3 @@
 ## 0.5
-* Release Date: TBD
+* Release Date: April 4, 2016
 * Initial release.
