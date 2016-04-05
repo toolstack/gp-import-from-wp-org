@@ -51,7 +51,7 @@ class GP_Import_From_WP_Org {
 
 		$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-plugins/%s/%s/%s/default/export-translations', $project->slug, $source_type, $translation_set->locale );
 
-		$data = file_get_contents( $wp_url );
+		$data = $this->get_web_page_contents( $wp_url );
 
 		if ( false !== $data ) {
 			$temp_file = tempnam( sys_get_temp_dir(), 'GPI' );
@@ -65,9 +65,9 @@ class GP_Import_From_WP_Org {
 
 				if ( !$translations ) {
 					unlink( $temp_file );
-					
+
 					$route->redirect_with_error( __( 'Couldn&#8217;t load translations from file!' ) );
-					
+
 					return;
 				}
 
@@ -78,12 +78,104 @@ class GP_Import_From_WP_Org {
 			}
 		} else {
 			$route->redirect_with_error( sprintf( __( 'Couldn&#8217;t download the translations from %s!' ), $wp_url ) );
-			
+
 			return;
 		}
 
 		// redirect back to the translation set page.
 		$route->redirect( gp_url_project( $project, gp_url_join( $translation_set->locale, $translation_set->slug ) ) );
+	}
+
+	private function get_web_page_contents( $url ) {
+		/*
+		 * There's a few ways we can get a web page's contents:
+		 *
+		 * 1: file_get_contents() if stream wrappers are enabled
+		 * 2: CURL
+		 * 3: fsockopen
+		 *
+		 */
+
+		if( function_exists( 'file_get_contents' ) && ini_get('allow_url_fopen') ) {
+			return file_get_contents( $url );
+		} else if( function_exists( 'curl_init' ) ) {
+			$crl = curl_init();
+			echo curl_error( $crl );
+
+			curl_setopt( $crl, CURLOPT_URL, $url );
+			echo curl_error( $crl );
+			curl_setopt( $crl, CURLOPT_RETURNTRANSFER, 1 );
+			echo curl_error( $crl );
+			curl_setopt( $crl, CURLOPT_CONNECTTIMEOUT, ini_get("default_socket_timeout") );
+			echo curl_error( $crl );
+			curl_setopt( $crl, CURLOPT_SSL_VERIFYPEER, false );
+			echo curl_error( $crl );
+			
+			$ret = curl_exec( $crl );
+			echo curl_error( $crl );
+
+			curl_close( $crl );
+
+			return $ret;
+		} else if( function_exists( 'fsockopen') ) {
+			$parsed_url = parse_url( $url );
+
+			// Check which protocol we're using and try and open the connection
+			if( 'http' == $parsed_url['scheme'] ) {
+				// For standard http, just use the host name and port 80.
+				$fp = fsockopen( $parsed_url['host'], 80 );
+			} else if( 'https' == $parsed_url['scheme'] ) {
+				// For https, first try using tls to make the connection on port 443.
+				$fp = fsockopen( 'tls://' . $parsed_url['host'], 443 );
+
+				// If tls failed, try ssl on port 443.  If this fails as well, we'll let the error trapping below return FALSE.
+				if( FALSE === $fp ) {
+					$fp = fsockopen( 'ssl://' . $parsed_url['host'], 443 );
+				}
+
+			} else {
+				return FALSE;
+			}
+
+			if( $fp ) {
+				$site_url = get_site_url();
+
+				$parsed = parse_url( $site_url );
+
+				$out  = "GET {$url} HTTP/1.0\r\n";
+				$out .= "Host: {$parsed['host']}\r\n";
+				$out .= "Connection: close\r\n";
+				$out .= "\r\n";
+
+				fwrite( $fp, $out );
+
+				$data = FALSE;
+
+				while( !feof( $fp ) ) {
+					$data .= fgets( $fp, 1024 );
+				}
+
+				fclose( $fp );
+
+				$lines = explode( "\r\n", $data );
+				$num_lines = count( $lines );
+				
+				for( $i = 0; $i < $num_lines; $i++ ) {
+					if( '' == $lines[$i] ) {
+						unset( $lines[$i] );
+						break;
+					} else {
+						unset( $lines[$i] );
+					}
+				}
+				
+				$data = implode( "\r\n", $lines );
+				
+				return $data;
+			}
+		}
+
+		return FALSE;
 	}
 
 	public function after_request() {
