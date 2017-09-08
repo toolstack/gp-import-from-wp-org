@@ -27,9 +27,23 @@ class GP_Import_From_WP_Org {
 
 	public function gp_translations_footer_links( $footer_links, $project, $locale, $translation_set ) {
 		if ( GP::$permission->current_user_can( 'approve', 'translation-set', $translation_set->id ) ) {
-			$stable_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable' ), __( '[Stable]' ) );
-			$dev_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/dev'), __( '[Development]' ) );
-			$footer_links[] = sprintf( __( 'Import from wordpress.org: %s %s' ), $stable_link, $dev_link );
+			$plugin_stable_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable' ), __( '[Stable]' ) );
+			$plugin_dev_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/dev'), __( '[Development]' ) );
+			$theme_link = gp_link_get( gp_url( '/gp-wp-import/' . $translation_set->id . '/stable'), __( '[Stable]' ) );
+
+			// Get the project settings.
+			$gp_auto_extract_project_settings = (array) get_option( 'gp_auto_extract', array() );
+			$gp_auto_extract_project_settings_type = $gp_auto_extract_project_settings[ $project->id ]['type'];
+			
+			if ( $gp_auto_extract_project_settings_type == 'wordpress' ) {
+				$project_type = __( 'Plugin' );
+				$project_sources = sprintf( __( '%s %s' ), $plugin_stable_link, $plugin_dev_link );
+			} elseif ( $gp_auto_extract_project_settings_type == 'wordpress_theme' ) {
+				$project_type = __( 'Theme' );
+				$project_sources = sprintf( __( '%s' ), $theme_link );
+			}
+
+			$footer_links[] = sprintf( __( 'Import %s translation from WordPress.org: %s' ), '<strong>' . $project_type . '</strong>', $project_sources );
 		}
 
 		return $footer_links;
@@ -49,7 +63,15 @@ class GP_Import_From_WP_Org {
 		$translation_set = GP::$translation_set->find_one( array( 'id' => $translation_set_id ) );
 		$project = GP::$project->find_one( array( 'id' => $translation_set->project_id ) );
 
-		$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-plugins/%s/%s/%s/default/export-translations', $project->slug, $source_type, $translation_set->locale );
+		// Get the project settings.
+		$gp_auto_extract_project_settings = (array) get_option( 'gp_auto_extract', array() );
+		$gp_auto_extract_project_settings_type = $gp_auto_extract_project_settings[ $project->id ]['type'];
+
+		if ( $gp_auto_extract_project_settings_type == 'wordpress' ) {
+			$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-plugins/%s/%s/%s/default/export-translations', $project->slug, $source_type, $translation_set->locale ); // Plugin URL
+		} elseif ( $gp_auto_extract_project_settings_type == 'wordpress_theme' ) {
+			$wp_url = sprintf( 'https://translate.wordpress.org/projects/wp-themes/%s/%s/default/export-translations', $project->slug, $translation_set->locale ); //Theme URL
+		}
 
 		$data = $this->get_web_page_contents( $wp_url );
 
