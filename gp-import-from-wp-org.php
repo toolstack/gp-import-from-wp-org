@@ -33,8 +33,6 @@ class GP_Import_From_WP_Org {
 
 			// Get the project settings.
 			$gp_auto_extract_project_settings = (array) get_option( 'gp_auto_extract', array() );
-			//print_r ( $gp_auto_extract_project_settings[ $project->id ]); // Project options
-			//print_r ( $gp_auto_extract_project_settings[ $project->id ]['type']); // Project Option Key 'type' value ( wordpress | wordpress_theme )
 			$gp_auto_extract_project_settings_type = $gp_auto_extract_project_settings[ $project->id ]['type'];
 			
 			if ( $gp_auto_extract_project_settings_type == 'wordpress' ) {
@@ -67,8 +65,6 @@ class GP_Import_From_WP_Org {
 
 		// Get the project settings.
 		$gp_auto_extract_project_settings = (array) get_option( 'gp_auto_extract', array() );
-		//print_r ( $gp_auto_extract_project_settings[ $project->id ]); // Project options
-		//print_r ( $gp_auto_extract_project_settings[ $project->id ]['type']); // Project Option Key 'type' value ( wordpress | wordpress_theme )
 		$gp_auto_extract_project_settings_type = $gp_auto_extract_project_settings[ $project->id ]['type'];
 
 		if ( $gp_auto_extract_project_settings_type == 'wordpress' ) {
